@@ -12,17 +12,29 @@ module.exports = function (zipPath, opts, cb) {
     return cb(new Error('Target directory is expected to be absolute'))
   }
 
-  mkdirp(opts.dir, function (err) {
-    if (err) return cb(err)
+  fs.access(opts.dir, err => {
+    if (err) {
+      if (err.code == "ENOENT") {
+        return mkdirp(opts.dir, function (err) {
+            if (err) return cb(err)
+            getpath()
+        })
+      }
+      return cb(err)
+    }
+    getpath();
+  });
+
+  function getpath() {
 
     fs.realpath(opts.dir, function (err, canonicalDir) {
-      if (err) return cb(err)
-
-      opts.dir = canonicalDir
-
-      openZip(opts)
-    })
-  })
+        if (err) return cb(err)
+  
+        opts.dir = canonicalDir
+  
+        openZip(opts)
+      })
+  }
 
   function openZip () {
     debug('opening', zipPath, 'with opts', opts)
